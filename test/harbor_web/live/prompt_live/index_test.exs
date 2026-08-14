@@ -1,6 +1,7 @@
 defmodule HarborWeb.PromptLive.IndexTest do
   use HarborWeb.ConnCase
 
+  import Harbor.PromptsFixtures
   import Phoenix.LiveViewTest
 
   alias Harbor.BrowserSessions
@@ -59,7 +60,7 @@ defmodule HarborWeb.PromptLive.IndexTest do
 
   defp create_prompt(browser_session_id, content) do
     {:ok, prompt} =
-      Prompts.create_prompt(browser_session_id, System.unique_integer([:positive]), %{
+      Prompts.create_prompt(browser_session_id, unique_gust_run_id(), %{
         content: content
       })
 

@@ -166,26 +166,31 @@ defmodule HarborWeb.SkipperLive.Show do
 
   @impl true
   def mount(%{"prompt_id" => prompt_id}, %{"browser_session_id" => browser_session_id}, socket) do
-    prompt = Prompts.get_accessible_prompt!(browser_session_id, prompt_id)
-    run = Flows.get_run!(prompt.gust_run_id)
+    prompt = Prompts.get_accessible_prompt(browser_session_id, prompt_id)
 
-    if connected?(socket) do
-      Gust.PubSub.subscribe_run(run.id)
+    if prompt do
+      run = Flows.get_run!(prompt.gust_run_id)
+
+      if connected?(socket) do
+        Gust.PubSub.subscribe_run(run.id)
+      end
+
+      recent_prompts = Prompts.list_prompts(browser_session_id, limit: 10)
+
+      {:ok,
+       socket
+       |> assign(:page_title, "Show Skipper")
+       |> assign(:browser_session_id, browser_session_id)
+       |> assign(:owner?, prompt.browser_session_id == browser_session_id)
+       |> assign(:prompt, prompt)
+       |> assign(:recent_prompts, recent_prompts)
+       |> assign(:content, prompt.content)
+       |> assign(:current_prompt_id, prompt.id)
+       |> assign(:synthesizer, run.params["synthesizer"])
+       |> assign_tasks_results(run.id)}
+    else
+      {:ok, socket |> push_navigate(to: ~p"/") |> put_flash(:error, "This prompt is private!")}
     end
-
-    recent_prompts = Prompts.list_prompts(browser_session_id, limit: 10)
-
-    {:ok,
-     socket
-     |> assign(:page_title, "Show Skipper")
-     |> assign(:browser_session_id, browser_session_id)
-     |> assign(:owner?, prompt.browser_session_id == browser_session_id)
-     |> assign(:prompt, prompt)
-     |> assign(:recent_prompts, recent_prompts)
-     |> assign(:content, prompt.content)
-     |> assign(:current_prompt_id, prompt.id)
-     |> assign(:synthesizer, run.params["synthesizer"])
-     |> assign_tasks_results(run.id)}
   end
 
   @impl true

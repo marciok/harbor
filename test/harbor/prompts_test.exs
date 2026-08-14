@@ -1,6 +1,8 @@
 defmodule Harbor.PromptsTest do
   use Harbor.DataCase, async: true
 
+  import Harbor.PromptsFixtures
+
   alias Harbor.BrowserSessions
   alias Harbor.Prompts
   alias Harbor.Prompts.Prompt
@@ -22,7 +24,7 @@ defmodule Harbor.PromptsTest do
   test "creates a prompt for a browser session and Gust run", %{
     browser_session: browser_session
   } do
-    gust_run_id = System.unique_integer([:positive])
+    gust_run_id = unique_gust_run_id()
 
     assert {:ok, %Prompt{} = prompt} =
              Prompts.create_prompt(browser_session.id, gust_run_id, %{
@@ -37,7 +39,7 @@ defmodule Harbor.PromptsTest do
 
   test "requires non-blank content", %{browser_session: browser_session} do
     assert {:error, changeset} =
-             Prompts.create_prompt(browser_session.id, System.unique_integer([:positive]), %{
+             Prompts.create_prompt(browser_session.id, unique_gust_run_id(), %{
                content: "   "
              })
 
@@ -45,7 +47,7 @@ defmodule Harbor.PromptsTest do
   end
 
   test "requires a unique Gust run", %{browser_session: browser_session} do
-    gust_run_id = System.unique_integer([:positive])
+    gust_run_id = unique_gust_run_id()
 
     assert {:ok, _prompt} =
              Prompts.create_prompt(browser_session.id, gust_run_id, %{content: "First prompt"})
@@ -62,14 +64,14 @@ defmodule Harbor.PromptsTest do
     {:ok, other_browser_session} = BrowserSessions.create_browser_session()
 
     assert {:ok, owned_prompt} =
-             Prompts.create_prompt(browser_session.id, System.unique_integer([:positive]), %{
+             Prompts.create_prompt(browser_session.id, unique_gust_run_id(), %{
                content: "Owned prompt"
              })
 
     assert {:ok, _other_prompt} =
              Prompts.create_prompt(
                other_browser_session.id,
-               System.unique_integer([:positive]),
+               unique_gust_run_id(),
                %{
                  content: "Another browser's prompt"
                }
@@ -87,7 +89,7 @@ defmodule Harbor.PromptsTest do
         assert {:ok, prompt} =
                  Prompts.create_prompt(
                    browser_session.id,
-                   System.unique_integer([:positive]),
+                   unique_gust_run_id(),
                    %{content: "Prompt #{number}"}
                  )
 
@@ -110,7 +112,7 @@ defmodule Harbor.PromptsTest do
     {:ok, other_browser_session} = BrowserSessions.create_browser_session()
 
     assert {:ok, prompt} =
-             Prompts.create_prompt(browser_session.id, System.unique_integer([:positive]), %{
+             Prompts.create_prompt(browser_session.id, unique_gust_run_id(), %{
                content: "Private prompt"
              })
 
@@ -127,17 +129,15 @@ defmodule Harbor.PromptsTest do
     {:ok, other_browser_session} = BrowserSessions.create_browser_session()
 
     {:ok, prompt} =
-      Prompts.create_prompt(browser_session.id, System.unique_integer([:positive]), %{
+      Prompts.create_prompt(browser_session.id, unique_gust_run_id(), %{
         content: "Shareable prompt"
       })
 
-    assert_raise Ecto.NoResultsError, fn ->
-      Prompts.get_accessible_prompt!(other_browser_session.id, prompt.id)
-    end
+    refute Prompts.get_accessible_prompt(other_browser_session.id, prompt.id)
 
     assert {:ok, public_prompt} = Prompts.set_public(browser_session.id, prompt.id, true)
     assert public_prompt.public
-    assert Prompts.get_accessible_prompt!(other_browser_session.id, prompt.id).id == prompt.id
+    assert Prompts.get_accessible_prompt(other_browser_session.id, prompt.id).id == prompt.id
 
     assert_raise Ecto.NoResultsError, fn ->
       Prompts.set_public(other_browser_session.id, prompt.id, false)

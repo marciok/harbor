@@ -46,14 +46,14 @@ defmodule Harbor.Prompts do
   @doc """
   Gets a prompt when it belongs to the browser session or is public.
   """
-  def get_accessible_prompt!(browser_session_id, id) do
+  def get_accessible_prompt(browser_session_id, id) do
     Prompt
     |> where(
       [prompt],
       prompt.id == ^id and
         (prompt.browser_session_id == ^browser_session_id or prompt.public)
     )
-    |> Repo.one!()
+    |> Repo.one()
   end
 
   @doc """

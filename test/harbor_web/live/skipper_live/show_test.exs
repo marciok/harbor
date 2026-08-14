@@ -91,9 +91,8 @@ defmodule HarborWeb.SkipperLive.ShowTest do
     assert has_element?(view, "#skipper-toggle-sharing")
     assert has_element?(view, "#flash-info", "Sharing stopped")
 
-    assert_raise Ecto.NoResultsError, fn ->
-      live(other_conn, ~p"/skipper/#{prompt.id}")
-    end
+    assert {:error, {:live_redirect, %{to: "/", flash: %{"error" => "This prompt is private!"}}}} =
+             live(other_conn, ~p"/skipper/#{prompt.id}")
   end
 
   test "does not render a prompt owned by another browser session", %{
@@ -103,8 +102,7 @@ defmodule HarborWeb.SkipperLive.ShowTest do
     {:ok, other_browser_session} = Harbor.BrowserSessions.create_browser_session()
     conn = init_test_session(conn, %{browser_session_id: other_browser_session.id})
 
-    assert_raise Ecto.NoResultsError, fn ->
-      live(conn, ~p"/skipper/#{prompt.id}")
-    end
+    assert {:error, {:live_redirect, %{to: "/", flash: %{"error" => "This prompt is private!"}}}} =
+             live(conn, ~p"/skipper/#{prompt.id}")
   end
 end

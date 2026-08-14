@@ -1,8 +1,33 @@
 # Harbor
 
-Harbor is a Phoenix application that uses [Gust](https://github.com/marciok/gust) to run a prompt across multiple AI models and synthesize one final answer.
+Harbor showcases prompt orchestration workflows built with [Gust](https://github.com/marciok/gust).
 
-## Run locally with Docker
+Skipper is the first workflow: it sends a prompt to multiple AI models, gathers their perspectives, and synthesizes them into a final answer.
+
+
+---
+
+## Example
+
+### Prompt
+
+*“Create a portfolio of high-risk/high-reward tech stocks to hold for the next 3 years.”*
+
+### Choose the panel of models
+<img width="1077" height="863" alt="Screenshot 2026-08-14 at 16 13 44" src="https://github.com/user-attachments/assets/79143543-9beb-4104-ae73-874051cd3c9b" />
+
+### 1. Each model receives the prompt
+<img width="1139" height="651" alt="Screenshot 2026-08-14 at 16 14 08" src="https://github.com/user-attachments/assets/c762e0fd-eb2e-4f36-9628-71f4e4936d99" />
+
+### 2. The responses are analyzed
+<img width="1135" height="538" alt="Screenshot 2026-08-14 at 16 52 14" src="https://github.com/user-attachments/assets/bc290dc8-a671-4802-a598-dda4fdf88f5a" />
+
+### 3. Another model synthesizes the responses into a final answer
+<img width="1143" height="862" alt="Screenshot 2026-08-14 at 16 56 59" src="https://github.com/user-attachments/assets/59a5a40f-8d4e-408a-8394-9882e5ec8488" />
+
+---
+
+## Run locally
 
 You only need Docker with Docker Compose installed.
 

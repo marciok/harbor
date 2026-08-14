@@ -1,0 +1,144 @@
+<Layouts.app flash={@flash} show_sidebar={false}>
+  <div id="home-page" class="home-page">
+    <section id="home-hero" class="home-hero" aria-labelledby="home-hero-heading">
+      <div class="home-hero__grid">
+        <div class="home-hero__content">
+          <p id="home-product-label" class="home-hero__eyebrow">
+            <img src={~p"/gust/images/gust-logo.png"} alt="Gust" class="home-hero__logo" />
+            <span>Harbor</span>
+          </p>
+
+          <h1 id="home-hero-heading" class="home-hero__title">
+            Model orchestration
+          </h1>
+
+          <p id="home-hero-description" class="home-hero__description">
+            Harbor showcases prompt orchestration workflows using multiple models.<br />
+            <strong>Skipper</strong>
+            runs a prompt across several models and synthesizes the best parts into one final answer.
+          </p>
+
+          <div id="home-hero-actions" class="home-hero__actions">
+            <.link
+              id="home-open-skipper"
+              navigate={~p"/skipper"}
+              class="home-hero__primary-action"
+            >
+              Try it! <.icon name="hero-arrow-right" class="size-4" />
+            </.link>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="what-is-skipper" class="home-skipper" aria-labelledby="what-is-skipper-heading">
+      <header class="home-section-heading">
+        <p>Skipper</p>
+        <h2 id="what-is-skipper-heading">What is Skipper?</h2>
+      </header>
+
+      <div class="home-skipper__card">
+        <p>
+          A panel of models answers the same prompt, a judge compares what came back, and a
+          synthesizer writes the final response. One model's answer is hard to trust on its own,
+          so Skipper makes the disagreement between them visible instead of hiding it.
+        </p>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="home-how" aria-labelledby="how-it-works-heading">
+      <header class="home-section-heading">
+        <h2 id="how-it-works-heading">How it works</h2>
+      </header>
+
+      <div id="home-steps" class="home-how__grid">
+        <article id="home-step-ask" class="home-step">
+          <div class="home-step__topline">
+            <span class="home-step__icon">
+              <.icon name="hero-chat-bubble-bottom-center-text" class="size-5" />
+            </span>
+            <span class="home-step__number">01</span>
+          </div>
+          <h3>Send a prompt</h3>
+          <p>
+            Choose which models should answer and which model should produce the final response.
+          </p>
+        </article>
+
+        <article id="home-step-compare" class="home-step">
+          <div class="home-step__topline">
+            <span class="home-step__icon">
+              <.icon name="hero-circle-stack" class="size-5" />
+            </span>
+            <span class="home-step__number">02</span>
+          </div>
+          <h3>Review the responses</h3>
+          <p>
+            Gust runs the calls concurrently. Harbor keeps each response and checks where the
+            models agree or disagree.
+          </p>
+        </article>
+
+        <article id="home-step-synthesize" class="home-step">
+          <div class="home-step__topline">
+            <span class="home-step__icon">
+              <.icon name="hero-arrows-pointing-in" class="size-5" />
+            </span>
+            <span class="home-step__number">03</span>
+          </div>
+          <h3>Create a final answer</h3>
+          <p>
+            The selected synthesizer receives the analysis and combines the useful parts into one
+            response.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="about" class="home-about" aria-labelledby="about-heading">
+      <header class="home-section-heading">
+        <p>About</p>
+        <h2 id="about-heading">DAGs for model orchestration</h2>
+      </header>
+
+      <div class="home-about__body">
+        <img
+          id="home-about-avatar"
+          src={~p"/images/marcio.jpg"}
+          alt="Marcio, the developer of Harbor"
+          width="72"
+          height="72"
+          loading="lazy"
+          class="home-about__avatar"
+        />
+
+        <div class="home-about__text">
+          <p>
+            Hi, this is <.link
+              href="https://x.com/marciok"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+            Marcio</.link>. I created <strong>Gust</strong>
+            and I am now experimenting with leveraging its capabilities to orchestrate models.
+          </p>
+          <p>
+            Running prompts through a DAG orchestrator brings scalability and resilience: steps
+            run concurrently, failures retry on their own, and long-running prompts keep going
+            even when they are combined with other tasks.
+          </p>
+
+          <.link
+            id="home-star-gust"
+            href="https://github.com/marciok/gust"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="home-about__gust-link"
+          >
+            <.icon name="hero-star" class="size-4" />Gust on GitHub
+          </.link>
+        </div>
+      </div>
+    </section>
+  </div>
+</Layouts.app>

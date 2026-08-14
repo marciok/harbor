@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: harbor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d harbor"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  harbor:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://postgres:postgres@db/harbor
+      PHX_HOST: localhost
+      PHX_SERVER: "true"
+      PORT: "4000"
+      GUST_DAGS_FOLDER: /app/dags
+      # Safe only for local development. Override these values for any deployment.
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-local-docker-secret-key-base-local-docker-secret-key-base-local-docker-secret-key-base}
+      B64_SECRETS_CLOAK_KEY: ${B64_SECRETS_CLOAK_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./dags:/app/dags:ro
+
+volumes:
+  postgres_data:

@@ -1,0 +1,12 @@
+export PG_HOST="localhost"
+export PG_USER="postgres"
+export PG_PASSWORD="postgres"
+export PG_DATABASE="harbor_dev"
+
+# Generate with: openssl rand -base64 32
+export B64_SECRETS_CLOAK_KEY="replace-me"
+
+# Generate with: mix phx.gen.secret
+export SECRET_KEY_BASE="replace-me"
+
+export GUST_DAGS_FOLDER="$PWD/dags"

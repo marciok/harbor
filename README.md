@@ -2,7 +2,7 @@
 
 Harbor showcases prompt orchestration workflows built with [Gust](https://github.com/marciok/gust).
 
-Skipper is the first workflow: it sends a prompt to multiple AI models, gathers their perspectives, and synthesizes them into a final answer.
+**Skipper** is the first workflow: it sends a prompt to multiple AI models, gathers their perspectives, and synthesizes them into a final answer.
 
 
 ---
@@ -72,3 +72,17 @@ With Harbor running through either method, open [http://localhost:4000/gust/secr
 ```
 
 Then visit [Skipper](http://localhost:4000/skipper) and load the available models.
+
+---
+
+## Under the hood
+
+Skipper uses `skipper_prompt` DAG to process each run.
+
+<img width="1242" height="860" alt="Screenshot 2026-08-14 at 17 20 27" src="https://github.com/user-attachments/assets/916911cf-db79-463a-8838-537c3ede5407" />
+
+<img width="1244" height="863" alt="Screenshot 2026-08-14 at 17 21 14" src="https://github.com/user-attachments/assets/c647b4b5-1074-4f94-bf53-80bd6c4b6cec" />
+
+
+
+

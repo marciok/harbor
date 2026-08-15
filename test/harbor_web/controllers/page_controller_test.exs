@@ -20,7 +20,7 @@ defmodule HarborWeb.PageControllerTest do
            |> Enum.count() == 1
 
     assert document
-           |> LazyHTML.query("link[rel='icon'][href='/gust/images/gust-logo.png']")
+           |> LazyHTML.query("link[rel='icon'][href='/images/logo.svg']")
            |> Enum.count() == 1
 
     assert document |> LazyHTML.query("#app-sidebar") |> Enum.empty?()

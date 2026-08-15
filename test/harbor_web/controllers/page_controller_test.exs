@@ -20,7 +20,7 @@ defmodule HarborWeb.PageControllerTest do
            |> Enum.count() == 1
 
     assert document
-           |> LazyHTML.query("link[rel='icon'][href='/images/logo.svg']")
+           |> LazyHTML.query("link[rel='icon'][href='/images/gust/gust-logo.png']")
            |> Enum.count() == 1
 
     assert document |> LazyHTML.query("#app-sidebar") |> Enum.empty?()
@@ -45,5 +45,12 @@ defmodule HarborWeb.PageControllerTest do
       |> get(~p"/")
 
     assert get_session(conn, :browser_session_id) == browser_session_id
+  end
+
+  test "serves the Gust logo from the public asset path", %{conn: conn} do
+    conn = get(conn, ~p"/images/gust/gust-logo.png")
+
+    assert response(conn, 200)
+    assert get_resp_header(conn, "content-type") == ["image/png"]
   end
 end

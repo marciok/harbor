@@ -30,6 +30,12 @@ defmodule HarborWeb.Router do
     end
   end
 
+  scope "/" do
+    forward "/images/gust", Plug.Static,
+      at: "/",
+      from: {:gust_web, "priv/static/images"}
+  end
+
   scope "/", HarborWeb do
     pipe_through [:browser, :browser_session]
 

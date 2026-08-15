@@ -43,7 +43,7 @@ defmodule HarborWeb.Layouts do
         <header :if={@show_sidebar} id="mobile-app-bar" class="mobile-app-bar">
           <.link navigate={~p"/"} class="mobile-app-bar__brand">
             <img
-              src={~p"/images/logo.svg"}
+              src={~p"/images/gust/gust-logo.png"}
               alt="Gust"
               class="mobile-app-bar__logo"
             />
@@ -88,7 +88,7 @@ defmodule HarborWeb.Layouts do
               phx-click={mobile_navigation(:closed)}
             >
               <img
-                src={~p"/images/logo.svg"}
+                src={~p"/images/gust/gust-logo.png"}
                 alt="Gust"
                 class="sidebar__logo"
               />

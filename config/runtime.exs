@@ -29,11 +29,12 @@ if config_env() == :prod do
       """
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
+  pool_size = String.to_integer(System.get_env("POOL_SIZE") || "10")
 
   config :harbor, Harbor.Repo,
     # ssl: true,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    pool_size: pool_size,
     # For machines with several cores, consider starting multiple pools of `pool_size`
     # pool_count: 4,
     socket_options: maybe_ipv6
@@ -67,7 +68,11 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  config :gust, Gust.Repo, url: System.fetch_env!("DATABASE_URL")
+  config :gust, Gust.Repo,
+    url: database_url,
+    pool_size: pool_size,
+    socket_options: maybe_ipv6
+
   config :gust, b64_secrets_cloak_key: System.fetch_env!("B64_SECRETS_CLOAK_KEY")
 
   # ## SSL Support

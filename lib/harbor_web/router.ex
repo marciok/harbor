@@ -19,22 +19,21 @@ defmodule HarborWeb.Router do
     plug HarborWeb.Plugs.EnsureBrowserSession
   end
 
-  scope "/" do
-    pipe_through [:browser]
+  auth_enabled? = Application.compile_env(:harbor, :basic_auth)
 
-    # This route is public by default, don't forget to add auth before deploying to prod, ex:
-    auth_enabled? = Application.compile_env(:harbor, :basic_auth)
-
-    if auth_enabled? do
-      defp basic_auth(conn, _opts) do
-        Plug.BasicAuth.basic_auth(conn,
-          username: System.get_env("BASIC_AUTH_USER"),
-          password: System.get_env("BASIC_AUTH_PASS")
-        )
-      end
+  if auth_enabled? do
+    defp basic_auth(conn, _opts) do
+      Plug.BasicAuth.basic_auth(conn,
+        username: System.get_env("BASIC_AUTH_USER"),
+        password: System.get_env("BASIC_AUTH_PASS")
+      )
     end
+  end
 
-    gust_dashboard()
+  scope "/" do
+    forward "/images/gust", Plug.Static,
+      at: "/",
+      from: {:gust_web, "priv/static/images"}
   end
 
   scope "/", HarborWeb do
@@ -44,6 +43,12 @@ defmodule HarborWeb.Router do
     live "/skipper", SkipperLive.Prompt, :new
     live "/skipper/:prompt_id", SkipperLive.Show, :show
     live "/prompts", PromptLive.Index, :index
+  end
+
+  scope "/" do
+    pipe_through(if auth_enabled?, do: [:browser, :basic_auth], else: :browser)
+
+    gust_dashboard()
   end
 
   # Other scopes may use custom stacks.

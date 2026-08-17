@@ -12,7 +12,7 @@ kill_signal = 'SIGTERM'
   release_command = '/app/bin/migrate'
 
 [env]
-  PHX_HOST = 'harbor-gust.fly.dev'
+  PHX_HOST = 'harbor-gust.com'
   PORT = '8080'
 
 [http_service]

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title">
+  <title id="title">Gust logo and Harbor wordmark</title>
+
+  <defs>
+    <linearGradient id="background" x1="72" y1="38" x2="1128" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fafc" />
+      <stop offset="1" stop-color="#dbeafe" />
+    </linearGradient>
+    <filter id="shadow" x="28" y="16" width="1144" height="606" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="25" flood-color="#0f172a" flood-opacity="0.14" />
+    </filter>
+    <filter id="glow" x="120" y="-100" width="960" height="830" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="62" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="#e2e8f0" />
+  <rect width="1200" height="630" fill="url(#background)" />
+  <circle cx="930" cy="120" r="190" fill="#38bdf8" fill-opacity="0.2" filter="url(#glow)" />
+  <circle cx="290" cy="535" r="180" fill="#2563eb" fill-opacity="0.14" filter="url(#glow)" />
+
+  <g filter="url(#shadow)">
+    <rect x="64" y="54" width="1072" height="522" rx="32" fill="#ffffff" />
+    <rect x="64.75" y="54.75" width="1070.5" height="520.5" rx="31.25" fill="none" stroke="#bae6fd" stroke-width="1.5" />
+  </g>
+
+  <g>
+    <rect x="330" y="245" width="144" height="116" rx="28" fill="#f0f9ff" />
+    <image href="/images/gust/gust-logo.png" xlink:href="/images/gust/gust-logo.png" x="344" y="257" width="116" height="92" />
+    <text x="512" y="342" fill="#0f172a" font-family="Arial, Helvetica, sans-serif" font-size="94" font-weight="700" letter-spacing="-2.8">Harbor</text>
+  </g>
+</svg>

@@ -1,9 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <% meta_title =
+      case assigns[:page_title] do
+        nil -> "Harbor"
+        page_title -> "#{page_title} · Harbor"
+      end
+
+    meta_description =
+      assigns[:meta_description] ||
+        "Compare responses from multiple AI models and synthesize their strongest ideas into one answer."
+
+    canonical_url = assigns[:canonical_url] || url(~p"/")
+    social_image_url = url(~p"/images/harbor-social-card.png")
+    social_image_alt = "Gust logo and Harbor wordmark" %>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta name="description" content={meta_description} />
+    <meta name="author" content="Marcio Klepacz" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0369a1" />
+
+    <link rel="canonical" href={canonical_url} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Harbor" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content={canonical_url} />
+    <meta property="og:title" content={meta_title} />
+    <meta property="og:description" content={meta_description} />
+    <meta property="og:image" content={social_image_url} />
+    <meta property="og:image:secure_url" content={social_image_url} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={social_image_alt} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@marciok" />
+    <meta name="twitter:title" content={meta_title} />
+    <meta name="twitter:description" content={meta_description} />
+    <meta name="twitter:image" content={social_image_url} />
+    <meta name="twitter:image:alt" content={social_image_alt} />
+
     <.live_title default="Harbor" suffix=" · Harbor">
       {assigns[:page_title]}
     </.live_title>

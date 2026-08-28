@@ -26,6 +26,7 @@ defmodule HarborWeb.SkipperLive.PromptTest do
 
     assert has_element?(view, "#skipper-gateway-status[role=status]")
     assert has_element?(view, "#skipper-gateway-status-title")
+    assert has_element?(view, "img[src='/images/openrouter.svg']")
     assert has_element?(view, "button#skipper-load-models:not([disabled])")
     assert has_element?(view, "#skipper > header p.text-slate-600")
 
@@ -57,6 +58,7 @@ defmodule HarborWeb.SkipperLive.PromptTest do
 
     assert has_element?(view, "#skipper-gateway-status[role=status]")
     assert has_element?(view, "#skipper-current-balance")
+    assert has_element?(view, "img[src='/images/openrouter.svg']")
 
     assert has_element?(
              view,
@@ -74,6 +76,31 @@ defmodule HarborWeb.SkipperLive.PromptTest do
            )
 
     refute has_element?(view, "#skipper-load-models")
+  end
+
+  test "allows a ready gateway whose OpenRouter key has no spending limit", %{
+    conn: conn,
+    dag: dag
+  } do
+    {:ok, run} = Flows.create_run(%{dag_id: dag.id, status: :succeeded})
+
+    create_task(run.id, "fetch", %{
+      "gust_task_items" => [
+        %{
+          "name" => "Claude Fable 5",
+          "owner" => "anthropic",
+          "slug" => "anthropic/claude-fable-5"
+        }
+      ]
+    })
+
+    create_task(run.id, "get_budget", %{"balance" => nil})
+
+    {:ok, view, _html} = live(conn, ~p"/skipper")
+
+    assert has_element?(view, "#skipper-current-balance")
+    refute has_element?(view, "#zero-balance-modal[open]")
+    refute has_element?(view, "#skipper-send[disabled]")
   end
 
   test "selects a synthesizer from the logo menu", %{conn: conn, dag: dag} do

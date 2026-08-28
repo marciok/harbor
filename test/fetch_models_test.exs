@@ -20,8 +20,11 @@ defmodule FetchModelsTest do
 
   test "filters models below either token limit" do
     models = [
-      model(%{"id" => "small-context", "context_window" => 127_999}),
-      model(%{"id" => "small-output", "max_tokens" => 7_999})
+      model(%{"id" => "supported/small-context", "context_length" => 127_999}),
+      model(%{
+        "id" => "supported/small-output",
+        "top_provider" => %{"max_completion_tokens" => 7_999}
+      })
     ]
 
     assert FetchModels.filter_models(models) == []
@@ -29,24 +32,41 @@ defmodule FetchModelsTest do
 
   test "filters unsupported, non-language, and incomplete models" do
     models = [
-      model(%{"id" => "unsupported", "owned_by" => "other"}),
-      model(%{"id" => "image", "type" => "image"}),
-      model(%{"id" => "missing-context"}) |> Map.delete("context_window"),
-      model(%{"id" => "missing-output"}) |> Map.delete("max_tokens")
+      model(%{"id" => "other/unsupported"}),
+      model(%{
+        "id" => "supported/image",
+        "architecture" => %{"output_modalities" => ["image"]}
+      }),
+      model(%{"id" => "supported/missing-context"}) |> Map.delete("context_length"),
+      model(%{"id" => "supported/missing-output"}) |> Map.delete("top_provider")
     ]
 
     assert FetchModels.filter_models(models) == []
   end
 
+  test "recognizes OpenRouter author slugs for the supported providers" do
+    Application.put_env(
+      :harbor,
+      :model_providers,
+      ~w(alibaba meta mistral xai zai)
+    )
+
+    models =
+      for owner <- ~w(qwen meta-llama mistralai x-ai z-ai) do
+        model(%{"id" => "#{owner}/model"})
+      end
+
+    assert FetchModels.filter_models(models) == models
+  end
+
   defp model(overrides \\ %{}) do
     Map.merge(
       %{
-        "context_window" => 128_000,
+        "architecture" => %{"output_modalities" => ["text"]},
+        "context_length" => 128_000,
         "id" => "supported/model",
-        "max_tokens" => 8_000,
         "name" => "Supported model",
-        "owned_by" => "supported",
-        "type" => "language"
+        "top_provider" => %{"max_completion_tokens" => 8_000}
       },
       overrides
     )

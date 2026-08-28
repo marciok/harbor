@@ -74,7 +74,7 @@ defmodule SkipperPrompt do
 
   defp chat_completion(model, messages) do
     "/chat/completions"
-    |> vercel_post!(%{model: model, messages: messages})
+    |> openrouter_post!(%{model: model, messages: messages})
     |> get_in(["choices", Access.at(0), "message", "content"]) || ""
   end
 
@@ -82,7 +82,7 @@ defmodule SkipperPrompt do
     text = analysis_text_format()
 
     "/responses"
-    |> vercel_post!(%{
+    |> openrouter_post!(%{
       model: model,
       input: [
         %{role: "developer", content: judge_system_prompt()},
@@ -115,9 +115,9 @@ defmodule SkipperPrompt do
     }
   end
 
-  defp vercel_post!(path, payload) do
+  defp openrouter_post!(path, payload) do
     %{"token" => token, "host" => host} =
-      Flows.get_secret_by_name("VERCEL_API").value
+      Flows.get_secret_by_name("OPENROUTER_API").value
       |> Jason.decode!()
 
     case Req.post(String.trim_trailing(host, "/") <> path,

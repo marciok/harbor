@@ -17,7 +17,7 @@ defmodule FetchModels do
     %{balance: credit["total_credits"] - credit["total_usage"]}
   end
 
-  task :fetch, downstream: [:test_model], save: true do
+  task :fetch, save: true do
     %{"data" => models} = get_openrouter!("/models")
     models = filter_models(models)
 

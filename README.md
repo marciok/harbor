@@ -63,15 +63,17 @@ Open [http://localhost:4000](http://localhost:4000).
 
 With Harbor running through either method, open [http://localhost:4000/gust/secrets/new](http://localhost:4000/gust/secrets/new) and create this Gust secret:
 
-- Name: `VERCEL_API`
+- Name: `OPENROUTER_API`
 - Value type: `json`
 - Value:
 
 ```json
-{"host":"https://ai-gateway.vercel.sh/v1","token":"your-vercel-ai-gateway-key"}
+{"host":"https://openrouter.ai/api/v1","token":"your-openrouter-api-key"}
 ```
 
-Then visit [Skipper](http://localhost:4000/skipper) and load the available models.
+The key's remaining spending limit is shown in Skipper when the key has a limit configured in
+OpenRouter. Keys without a spending limit are treated as unrestricted. Then visit
+[Skipper](http://localhost:4000/skipper) and load the available models.
 
 ---
 
@@ -82,7 +84,6 @@ Skipper uses `skipper_prompt` DAG to process each run.
 <img width="1242" height="860" alt="Screenshot 2026-08-14 at 17 20 27" src="https://github.com/user-attachments/assets/916911cf-db79-463a-8838-537c3ede5407" />
 
 <img width="1244" height="863" alt="Screenshot 2026-08-14 at 17 21 14" src="https://github.com/user-attachments/assets/c647b4b5-1074-4f94-bf53-80bd6c4b6cec" />
-
 
 
 

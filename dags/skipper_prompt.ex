@@ -26,11 +26,16 @@ defmodule SkipperPrompt do
     save: true do
     prompt = prompt_from_task(run_id)
     model = params
+    task_id = response_task_id(run_id, model)
 
     content =
-      chat_completion(model["slug"], [
-        %{role: "user", content: prompt}
-      ])
+      stream_chat_completion(
+        model["slug"],
+        [%{role: "user", content: prompt}],
+        run_id,
+        task_id,
+        :source
+      )
 
     %{model: model, content: content}
   end
@@ -53,12 +58,19 @@ defmodule SkipperPrompt do
     %{"analysis" => analysis} = Flows.get_task_by_name_run("judge_analysis", run_id).result
     responses = panel_responses(run_id)
     run = Flows.get_run!(run_id)
+    task = Flows.get_task_by_name_run("synthesize", run_id)
 
     answer =
-      chat_completion(run.params["synthesizer"]["slug"], [
-        %{role: "system", content: synthesize_system_prompt()},
-        %{role: "user", content: synthesize_user_prompt(prompt, responses, analysis)}
-      ])
+      stream_chat_completion(
+        run.params["synthesizer"]["slug"],
+        [
+          %{role: "system", content: synthesize_system_prompt()},
+          %{role: "user", content: synthesize_user_prompt(prompt, responses, analysis)}
+        ],
+        run_id,
+        task.id,
+        :synthesis
+      )
 
     %{answer: answer}
   end
@@ -72,17 +84,23 @@ defmodule SkipperPrompt do
     end)
   end
 
-  defp chat_completion(model, messages) do
-    "/chat/completions"
-    |> vercel_post!(%{model: model, messages: messages})
-    |> get_in(["choices", Access.at(0), "message", "content"]) || ""
+  defp stream_chat_completion(model, messages, run_id, task_id, kind) do
+    Harbor.SkipperStream.broadcast_started(run_id, kind, task_id)
+
+    content =
+      Harbor.OpenRouter.chat_completion!(model, messages, fn delta ->
+        Harbor.SkipperStream.broadcast_delta(run_id, kind, task_id, delta)
+      end)
+
+    Harbor.SkipperStream.broadcast_finished(run_id, kind, task_id, content)
+    content
   end
 
   defp input_chat_completion(model, prompt, responses) do
     text = analysis_text_format()
 
     "/responses"
-    |> vercel_post!(%{
+    |> openrouter_post!(%{
       model: model,
       input: [
         %{role: "developer", content: judge_system_prompt()},
@@ -115,9 +133,9 @@ defmodule SkipperPrompt do
     }
   end
 
-  defp vercel_post!(path, payload) do
+  defp openrouter_post!(path, payload) do
     %{"token" => token, "host" => host} =
-      Flows.get_secret_by_name("VERCEL_API").value
+      Flows.get_secret_by_name("OPENROUTER_API").value
       |> Jason.decode!()
 
     case Req.post(String.trim_trailing(host, "/") <> path,
@@ -140,6 +158,16 @@ defmodule SkipperPrompt do
     response["output"]
     |> Enum.find(&(&1["type"] == "message"))
     |> get_in(["content", Access.at(0), "text"])
+  end
+
+  defp response_task_id(run_id, model) do
+    case Enum.find(
+           Flows.get_tasks_by_name("get_responses", run_id),
+           &(&1.params["slug"] == model["slug"])
+         ) do
+      nil -> raise "Response task not found for model #{inspect(model["slug"])}"
+      task -> task.id
+    end
   end
 
   defp prompt_from_task(run_id) do

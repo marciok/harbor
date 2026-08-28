@@ -4,19 +4,27 @@ defmodule FetchModels do
 
   @minimum_context_window 128_000
   @minimum_output_tokens 8_000
+  @provider_aliases %{
+    "meta-llama" => "meta",
+    "mistralai" => "mistral",
+    "qwen" => "alibaba",
+    "x-ai" => "xai",
+    "z-ai" => "zai"
+  }
 
   task :get_budget, save: true do
-    get_model_provider!("/credits")
+    %{"data" => credit} = get_openrouter!("/credits")
+    %{balance: credit["total_credits"] - credit["total_usage"]}
   end
 
   task :fetch, save: true do
-    %{"data" => models} = get_model_provider!("/models")
+    %{"data" => models} = get_openrouter!("/models")
     models = filter_models(models)
 
     models
-    |> Enum.sort_by(fn %{"owned_by" => provider, "type" => "language"} -> provider end)
-    |> Enum.map(fn %{"id" => slug, "name" => name, "owned_by" => owner} ->
-      %{slug: slug, name: name, owner: owner}
+    |> Enum.sort_by(fn %{"id" => slug} -> owner_from_slug(slug) end)
+    |> Enum.map(fn %{"id" => slug, "name" => name} ->
+      %{slug: slug, name: name, owner: owner_from_slug(slug)}
     end)
   end
 
@@ -25,13 +33,15 @@ defmodule FetchModels do
 
     Enum.filter(models, fn
       %{
-        "context_window" => context_window,
-        "max_tokens" => max_tokens,
-        "owned_by" => provider,
-        "type" => "language"
+        "architecture" => %{"output_modalities" => output_modalities},
+        "context_length" => context_window,
+        "id" => slug,
+        "top_provider" => %{"max_completion_tokens" => max_tokens}
       }
-      when is_integer(context_window) and is_integer(max_tokens) ->
-        provider in providers and
+      when is_binary(slug) and is_list(output_modalities) and is_integer(context_window) and
+             is_integer(max_tokens) ->
+        owner_from_slug(slug) in providers and
+          "text" in output_modalities and
           context_window >= @minimum_context_window and
           max_tokens >= @minimum_output_tokens
 
@@ -40,13 +50,20 @@ defmodule FetchModels do
     end)
   end
 
-  defp get_model_provider!(path) do
+  defp get_openrouter!(path) do
     %{"token" => token, "host" => host} =
-      Gust.Flows.get_secret_by_name("VERCEL_API").value |> Jason.decode!()
+      Gust.Flows.get_secret_by_name("OPENROUTER_API").value |> Jason.decode!()
 
     %Req.Response{status: 200, body: body} =
-      Req.get!("#{host}#{path}", auth: {:bearer, token})
+      Req.get!(String.trim_trailing(host, "/") <> path, auth: {:bearer, token})
 
     body
+  end
+
+  defp owner_from_slug(slug) do
+    case String.split(slug, "/", parts: 2) do
+      [owner, _model] -> Map.get(@provider_aliases, owner, owner)
+      _invalid_slug -> nil
+    end
   end
 end

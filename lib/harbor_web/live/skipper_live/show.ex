@@ -56,6 +56,7 @@ defmodule HarborWeb.SkipperLive.Show do
             <.source_card
               :for={{dom_id, task} <- @streams.response_tasks}
               id={dom_id}
+              open={@open_source_id == task.id}
               source={task}
             />
           </div>
@@ -173,6 +174,7 @@ defmodule HarborWeb.SkipperLive.Show do
 
       if connected?(socket) do
         Gust.PubSub.subscribe_run(run.id)
+        Harbor.SkipperStream.subscribe(run.id)
       end
 
       recent_prompts = Prompts.list_prompts(browser_session_id, limit: 10)
@@ -182,10 +184,12 @@ defmodule HarborWeb.SkipperLive.Show do
        |> assign(:page_title, "Show Skipper")
        |> assign(:browser_session_id, browser_session_id)
        |> assign(:owner?, prompt.browser_session_id == browser_session_id)
+       |> assign(:open_source_id, nil)
        |> assign(:prompt, prompt)
        |> assign(:recent_prompts, recent_prompts)
        |> assign(:content, prompt.content)
        |> assign(:current_prompt_id, prompt.id)
+       |> assign(:run_id, run.id)
        |> assign(:synthesizer, run.params["synthesizer"])
        |> assign_tasks_results(run.id)}
     else
@@ -208,17 +212,50 @@ defmodule HarborWeb.SkipperLive.Show do
      |> put_flash(:info, message)}
   end
 
+  def handle_event("toggle_source", %{"id" => id}, socket) do
+    with {source_id, ""} <- Integer.parse(id),
+         true <- Map.has_key?(socket.assigns.response_tasks_by_id, source_id) do
+      previous_source_id = socket.assigns.open_source_id
+      open_source_id = if previous_source_id == source_id, do: nil, else: source_id
+
+      socket =
+        socket
+        |> assign(:open_source_id, open_source_id)
+        |> refresh_source_cards([previous_source_id, source_id])
+
+      {:noreply, socket}
+    else
+      _other -> {:noreply, socket}
+    end
+  end
+
   defp assign_tasks_results(socket, run_id) do
-    response_tasks = get_responses_task(run_id)
+    streamed_responses = Map.get(socket.assigns, :streamed_responses, %{})
+
+    response_tasks =
+      run_id
+      |> get_responses_task()
+      |> Enum.map(&with_streamed_response(&1, streamed_responses))
+
     analysis_task = Flows.get_task_by_name_run("judge_analysis", run_id)
     synthesize_task = Flows.get_task_by_name_run("synthesize", run_id)
+    streamed_synthesis = Map.get(socket.assigns, :streamed_synthesis)
+
+    synthesize_result =
+      case task_result(synthesize_task, "answer", nil) do
+        content when is_binary(content) and content != "" -> content
+        _other -> streamed_synthesis
+      end
 
     socket
     |> assign(
       analysis_result: task_result(analysis_task, "analysis", %{}),
       analysis_task: analysis_task,
       models_used: length(response_tasks),
-      synthesize_result: task_result(synthesize_task, "answer", nil),
+      response_tasks_by_id: Map.new(response_tasks, &{&1.id, &1}),
+      streamed_responses: streamed_responses,
+      streamed_synthesis: streamed_synthesis,
+      synthesize_result: synthesize_result,
       synthesize_task: synthesize_task
     )
     |> stream(:response_tasks, response_tasks)
@@ -233,6 +270,19 @@ defmodule HarborWeb.SkipperLive.Show do
 
   defp task_result(_task, _key, default), do: default
 
+  defp with_streamed_response(task, streamed_responses) do
+    case task_result(task, "content", nil) do
+      content when is_binary(content) and content != "" ->
+        task
+
+      _other ->
+        case Map.fetch(streamed_responses, task.id) do
+          {:ok, content} -> %{task | result: Map.put(task.result, "content", content)}
+          :error -> task
+        end
+    end
+  end
+
   @impl true
   def handle_info(
         {:dag, :run_status, %{run_id: run_id, status: _status, task_id: _task_id}},
@@ -241,5 +291,141 @@ defmodule HarborWeb.SkipperLive.Show do
     {:noreply,
      socket
      |> assign_tasks_results(run_id)}
+  end
+
+  def handle_info(
+        {:skipper_stream,
+         %{run_id: run_id, kind: kind, task_id: task_id, event: event, content: content}},
+        %{assigns: %{run_id: run_id}} = socket
+      ) do
+    socket =
+      case {kind, event} do
+        {:source, :started} -> put_response_content(socket, task_id, "")
+        {:source, :delta} -> append_response_content(socket, task_id, content)
+        {:source, :finished} -> put_response_content(socket, task_id, content)
+        {:synthesis, :started} -> put_synthesis_content(socket, task_id, "")
+        {:synthesis, :delta} -> append_synthesis_content(socket, task_id, content)
+        {:synthesis, :finished} -> put_synthesis_content(socket, task_id, content)
+      end
+
+    {:noreply, socket}
+  end
+
+  defp append_response_content(socket, task_id, delta) do
+    with {:ok, task, socket} <- response_task(socket, task_id),
+         false <- task.status == :succeeded do
+      content = Map.get(socket.assigns.streamed_responses, task_id, "") <> delta
+      put_response_content(socket, task_id, content)
+    else
+      _other -> socket
+    end
+  end
+
+  defp put_response_content(socket, task_id, content) do
+    case response_task(socket, task_id) do
+      {:ok, task, socket} ->
+        task = %{task | result: Map.put(task.result, "content", content)}
+
+        socket
+        |> assign(
+          :streamed_responses,
+          Map.put(socket.assigns.streamed_responses, task_id, content)
+        )
+        |> assign(
+          :response_tasks_by_id,
+          Map.put(socket.assigns.response_tasks_by_id, task_id, task)
+        )
+        |> stream_insert(:response_tasks, task, at: task.map_index || -1)
+
+      :error ->
+        socket
+    end
+  end
+
+  defp response_task(socket, task_id) do
+    case Map.fetch(socket.assigns.response_tasks_by_id, task_id) do
+      {:ok, task} ->
+        {:ok, task, socket}
+
+      :error ->
+        task = Flows.get_task!(task_id)
+
+        if task.run_id == socket.assigns.run_id and task.name == "get_responses" do
+          socket =
+            assign(
+              socket,
+              :response_tasks_by_id,
+              Map.put(socket.assigns.response_tasks_by_id, task_id, task)
+            )
+
+          {:ok, task, socket}
+        else
+          :error
+        end
+    end
+  end
+
+  defp append_synthesis_content(socket, task_id, delta) do
+    socket = ensure_synthesis_task(socket, task_id)
+
+    case socket.assigns.synthesize_task do
+      %{status: :succeeded} ->
+        socket
+
+      %{id: ^task_id} ->
+        content = (socket.assigns.streamed_synthesis || "") <> delta
+
+        socket
+        |> assign(:streamed_synthesis, content)
+        |> assign(:synthesize_result, content)
+
+      _other ->
+        socket
+    end
+  end
+
+  defp put_synthesis_content(socket, task_id, content) do
+    socket = ensure_synthesis_task(socket, task_id)
+
+    case socket.assigns.synthesize_task do
+      %{id: ^task_id} ->
+        socket
+        |> assign(:streamed_synthesis, content)
+        |> assign(:synthesize_result, content)
+
+      _other ->
+        socket
+    end
+  end
+
+  defp ensure_synthesis_task(socket, task_id) do
+    case socket.assigns.synthesize_task do
+      %{id: ^task_id} ->
+        socket
+
+      _other ->
+        task = Flows.get_task!(task_id)
+
+        if task.run_id == socket.assigns.run_id and task.name == "synthesize" do
+          assign(socket, :synthesize_task, task)
+        else
+          socket
+        end
+    end
+  end
+
+  defp refresh_source_cards(socket, task_ids) do
+    task_ids
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> Enum.reduce(socket, fn task_id, socket ->
+      case Map.fetch(socket.assigns.response_tasks_by_id, task_id) do
+        {:ok, task} ->
+          stream_insert(socket, :response_tasks, task, at: task.map_index || -1)
+
+        :error ->
+          socket
+      end
+    end)
   end
 end

@@ -26,7 +26,7 @@ defmodule HarborWeb.SkipperLive.Prompt do
         >
           <div class="skipper-gateway-status__logo-wrap">
             <img
-              src={~p"/images/vercel.svg"}
+              src={~p"/images/openrouter.svg"}
               alt=""
               aria-hidden="true"
               class="skipper-gateway-status__logo"
@@ -36,13 +36,13 @@ defmodule HarborWeb.SkipperLive.Prompt do
           <div class="skipper-gateway-status__content">
             <p class="skipper-gateway-status__eyebrow">Model gateway</p>
             <h2 id="skipper-gateway-status-title" class="skipper-gateway-status__title">
-              Vercel AI Gateway
+              OpenRouter
             </h2>
 
             <%= if @models != [] do %>
               <div class="skipper-gateway-status__meta">
                 <span class="skipper-gateway-status__balance">
-                  Balance
+                  {@balance_label}
                   <strong
                     id="skipper-current-balance"
                     class="skipper-gateway-status__balance-value"
@@ -191,6 +191,7 @@ defmodule HarborWeb.SkipperLive.Prompt do
           |> assign(:prompt_disabled?, true)
           |> assign(:models, [])
           |> stream(:panel_models, [])
+          |> assign(:balance_label, nil)
           |> assign(:balance_display, nil)
           |> assign(:balance, nil)
           |> assign(:selected_synthesizer, nil)
@@ -322,8 +323,13 @@ defmodule HarborWeb.SkipperLive.Prompt do
     models_task = Flows.get_task_by_name_run("fetch", run_id)
     budget_task = Flows.get_task_by_name_run("get_budget", run_id)
 
-    balance = Decimal.new(budget_task.result["balance"])
-    balance_display = balance |> Decimal.round(2) |> Decimal.to_string(:normal)
+    balance = decimal_balance(budget_task.result["balance"])
+
+    {balance_label, balance_display} =
+      case balance do
+        nil -> {"Key spending limit", "Not set"}
+        balance -> {"Remaining limit", "$#{format_balance(balance)}"}
+      end
 
     %{"gust_task_items" => models} = models_task.result
 
@@ -343,7 +349,8 @@ defmodule HarborWeb.SkipperLive.Prompt do
     |> stream(:panel_models, panel_models)
     |> assign(:prompt_disabled?, insufficient_balance?(balance))
     |> assign(:balance, balance)
-    |> assign(:balance_display, "$#{balance_display}")
+    |> assign(:balance_label, balance_label)
+    |> assign(:balance_display, balance_display)
     |> assign(:selected_models, panel_models)
     |> assign(
       :synthesizer_form,
@@ -380,6 +387,16 @@ defmodule HarborWeb.SkipperLive.Prompt do
 
   defp insufficient_balance?(%Decimal{} = decimal_balance) do
     Decimal.compare(decimal_balance, 1) in [:lt, :eq]
+  end
+
+  defp decimal_balance(nil), do: nil
+  defp decimal_balance(balance) when is_float(balance), do: Decimal.from_float(balance)
+  defp decimal_balance(balance), do: Decimal.new(balance)
+
+  defp format_balance(balance) do
+    balance
+    |> Decimal.round(2)
+    |> Decimal.to_string(:normal)
   end
 
   defp finish_loading_models(socket) do

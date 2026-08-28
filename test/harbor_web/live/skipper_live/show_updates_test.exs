@@ -31,4 +31,61 @@ defmodule HarborWeb.SkipperLive.ShowUpdatesTest do
     assert has_element?(view, "#skipper-result")
     assert has_element?(view, "#skipper-results-status[data-status=succeeded]")
   end
+
+  test "renders source and synthesis content as OpenRouter streams it", %{
+    conn: conn,
+    prompt: prompt,
+    run: run
+  } do
+    response_task =
+      response_task_fixture(run, %{
+        params: %{
+          "name" => "GPT Test",
+          "owner" => "openai",
+          "slug" => "openai/gpt-test"
+        },
+        result: %{},
+        status: :running
+      })
+
+    synthesize_task = synthesize_task_fixture(run, %{result: %{}, status: :running})
+
+    {:ok, view, _html} = live(conn, ~p"/skipper/#{prompt.id}")
+
+    Harbor.SkipperStream.broadcast_started(run.id, :source, response_task.id)
+
+    view
+    |> element("#response_tasks-#{response_task.id}-toggle")
+    |> render_click()
+
+    assert has_element?(view, "#response_tasks-#{response_task.id}[open]")
+
+    Harbor.SkipperStream.broadcast_delta(run.id, :source, response_task.id, "Streaming ")
+    Harbor.SkipperStream.broadcast_delta(run.id, :source, response_task.id, "source")
+    Gust.PubSub.broadcast_run_status(run.id, :running, response_task.id)
+
+    assert has_element?(view, "#response_tasks-#{response_task.id}[open]")
+
+    assert has_element?(
+             view,
+             "#response_tasks-#{response_task.id}-content p",
+             "Streaming source"
+           )
+
+    Harbor.SkipperStream.broadcast_started(run.id, :synthesis, synthesize_task.id)
+    Harbor.SkipperStream.broadcast_delta(run.id, :synthesis, synthesize_task.id, "Fused ")
+    Harbor.SkipperStream.broadcast_delta(run.id, :synthesis, synthesize_task.id, "answer")
+    Gust.PubSub.broadcast_run_status(run.id, :running, synthesize_task.id)
+
+    assert has_element?(view, "#skipper-result-markdown p", "Fused answer")
+
+    Harbor.SkipperStream.broadcast_started(run.id, :source, response_task.id)
+    Harbor.SkipperStream.broadcast_delta(run.id, :source, response_task.id, "Retry response")
+
+    assert has_element?(
+             view,
+             "#response_tasks-#{response_task.id}-content p",
+             "Retry response"
+           )
+  end
 end

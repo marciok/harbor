@@ -1,5 +1,6 @@
 defmodule FetchModels do
   require Logger
+  use Gust.DSL, schedule: "*/5 * * * *"
 
   @minimum_context_window 128_000
   @minimum_output_tokens 8_000
@@ -12,8 +13,8 @@ defmodule FetchModels do
   }
 
   task :get_budget, save: true do
-    %{"data" => key} = get_openrouter!("/key")
-    %{balance: key["limit_remaining"]}
+    %{"data" => credit} = get_openrouter!("/credits")
+    %{balance: credit["total_credits"] - credit["total_usage"]}
   end
 
   task :fetch, downstream: [:test_model], save: true do

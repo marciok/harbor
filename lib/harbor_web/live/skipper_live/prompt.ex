@@ -328,7 +328,7 @@ defmodule HarborWeb.SkipperLive.Prompt do
     {balance_label, balance_display} =
       case balance do
         nil -> {"Key spending limit", "Not set"}
-        balance -> {"Remaining key limit", "$#{format_balance(balance)}"}
+        balance -> {"Remaining limit", "$#{format_balance(balance)}"}
       end
 
     %{"gust_task_items" => models} = models_task.result

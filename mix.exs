@@ -42,7 +42,7 @@ defmodule Harbor.MixProject do
     [
       {:mdex, "~> 0.13"},
       {:file_system, "~> 1.1", only: :dev},
-      {:gust_web, "0.1.37"},
+      {:gust_web, "0.1.38"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:phoenix, "~> 1.8.0"},
       {:phoenix_ecto, "~> 4.5"},

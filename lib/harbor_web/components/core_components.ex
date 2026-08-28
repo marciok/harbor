@@ -581,6 +581,7 @@ defmodule HarborWeb.CoreComponents do
 
   @doc false
   attr :id, :string, required: true
+  attr :open, :boolean, default: false
   attr :source, :map, required: true
 
   def source_card(assigns) do
@@ -595,7 +596,7 @@ defmodule HarborWeb.CoreComponents do
           result = assigns[:source].result
 
           if result do
-            result["content"] || "*Response received. Preparing it for display…*"
+            result["content"] || "*Response received. Preparing it for stream…*"
           else
             "*Waiting for the model to respond…*"
           end
@@ -603,8 +604,13 @@ defmodule HarborWeb.CoreComponents do
       end)
 
     ~H"""
-    <details id={@id} class="skipper-disclosure">
-      <summary class="skipper-disclosure__summary">
+    <details id={@id} class="skipper-disclosure" open={@open}>
+      <summary
+        id={"#{@id}-toggle"}
+        class="skipper-disclosure__summary"
+        phx-click="toggle_source"
+        phx-value-id={@source.id}
+      >
         <span class="skipper-model-badge">
           <img
             src={ModelProvider.icon_path(@source.params["owner"])}

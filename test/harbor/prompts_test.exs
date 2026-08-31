@@ -46,6 +46,53 @@ defmodule Harbor.PromptsTest do
     assert "can't be blank" in errors_on(changeset).content
   end
 
+  test "sets a valid notification email for an owned prompt", %{
+    browser_session: browser_session
+  } do
+    {:ok, prompt} =
+      Prompts.create_prompt(browser_session.id, unique_gust_run_id(), %{
+        content: "Notify me"
+      })
+
+    assert {:ok, updated_prompt} =
+             Prompts.set_notification_email(browser_session.id, prompt.id, %{
+               "notification_email" => "  sailor@example.com  "
+             })
+
+    assert updated_prompt.notification_email == "sailor@example.com"
+  end
+
+  test "rejects an invalid notification email", %{browser_session: browser_session} do
+    {:ok, prompt} =
+      Prompts.create_prompt(browser_session.id, unique_gust_run_id(), %{
+        content: "Notify me"
+      })
+
+    assert {:error, changeset} =
+             Prompts.set_notification_email(browser_session.id, prompt.id, %{
+               "notification_email" => "not-an-email"
+             })
+
+    assert "must be a valid email address" in errors_on(changeset).notification_email
+  end
+
+  test "does not let another browser set a notification email", %{
+    browser_session: browser_session
+  } do
+    {:ok, other_browser_session} = BrowserSessions.create_browser_session()
+
+    {:ok, prompt} =
+      Prompts.create_prompt(browser_session.id, unique_gust_run_id(), %{
+        content: "Notify me"
+      })
+
+    assert_raise Ecto.NoResultsError, fn ->
+      Prompts.set_notification_email(other_browser_session.id, prompt.id, %{
+        "notification_email" => "intruder@example.com"
+      })
+    end
+  end
+
   test "requires a unique Gust run", %{browser_session: browser_session} do
     gust_run_id = unique_gust_run_id()
 

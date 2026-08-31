@@ -32,6 +32,21 @@ defmodule HarborWeb.SkipperLive.ShowUpdatesTest do
     assert has_element?(view, "#skipper-results-status[data-status=succeeded]")
   end
 
+  test "hides the notification control when the run finishes without a saved email", %{
+    conn: conn,
+    prompt: prompt,
+    run: run
+  } do
+    {:ok, view, _html} = live(conn, ~p"/skipper/#{prompt.id}")
+
+    assert has_element?(view, "#skipper-notification-toggle")
+
+    Gust.PubSub.broadcast_run_status(run.id, :succeeded)
+
+    refute has_element?(view, "#skipper-notification-toggle")
+    refute has_element?(view, "#skipper-notification-modal")
+  end
+
   test "renders source and synthesis content as OpenRouter streams it", %{
     conn: conn,
     prompt: prompt,

@@ -107,21 +107,18 @@ if config_env() == :prod do
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
 
-  # ## Configuring the mailer
-  #
-  # In production you need to configure the mailer to use a different adapter.
-  # Here is an example configuration for Mailgun:
-  #
-  #     config :harbor, Harbor.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # Most non-SMTP adapters require an API client. Swoosh supports Req, Hackney,
-  # and Finch out-of-the-box. This configuration is typically done at
-  # compile-time in your config/prod.exs:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Req
-  #
-  # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  if resend_api_key = System.get_env("RESEND_API_KEY") do
+    notification_from_email =
+      System.get_env("NOTIFICATION_FROM_EMAIL") ||
+        raise """
+        environment variable NOTIFICATION_FROM_EMAIL is missing.
+        Set it to an address on a domain verified in Resend.
+        """
+
+    config :harbor, Harbor.Mailer,
+      adapter: Swoosh.Adapters.Resend,
+      api_key: resend_api_key
+
+    config :harbor, :notification_from, {"Skipper", notification_from_email}
+  end
 end

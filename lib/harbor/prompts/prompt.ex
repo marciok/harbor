@@ -14,6 +14,7 @@ defmodule Harbor.Prompts.Prompt do
   schema "prompts" do
     field :content, :string
     field :gust_run_id, :integer
+    field :notification_email, :string
     field :public, :boolean, default: false
 
     belongs_to :browser_session, BrowserSession
@@ -40,4 +41,21 @@ defmodule Harbor.Prompts.Prompt do
     |> cast(attrs, [:content])
     |> validate_required([:content])
   end
+
+  @doc """
+  Builds a changeset for a prompt completion notification email.
+  """
+  def notification_changeset(prompt, attrs) do
+    prompt
+    |> cast(attrs, [:notification_email])
+    |> update_change(:notification_email, &normalize_notification_email/1)
+    |> validate_required([:notification_email])
+    |> validate_length(:notification_email, max: 254)
+    |> validate_format(:notification_email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/,
+      message: "must be a valid email address"
+    )
+  end
+
+  defp normalize_notification_email(email) when is_binary(email), do: String.trim(email)
+  defp normalize_notification_email(email), do: email
 end

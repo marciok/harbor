@@ -47,6 +47,7 @@ config :harbor, HarborWeb.Endpoint,
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
 config :harbor, Harbor.Mailer, adapter: Swoosh.Adapters.Local
+config :harbor, :notification_from, {"Skipper", "notifications@harbor.local"}
 
 # Configure esbuild (the version is required)
 config :esbuild,

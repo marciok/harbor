@@ -307,10 +307,10 @@ defmodule HarborWeb.SkipperLive.Prompt do
             }
           })
 
-        Gust.DAG.Run.Trigger.dispatch_run(run)
-
         {:ok, prompt} =
           Harbor.Prompts.create_prompt(socket.assigns.browser_session_id, run.id, prompt_params)
+
+        Gust.DAG.Run.Trigger.dispatch_run(run)
 
         {:noreply, socket |> push_navigate(to: ~p"/skipper/#{prompt.id}")}
 

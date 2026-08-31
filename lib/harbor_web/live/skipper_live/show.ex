@@ -2,6 +2,7 @@ defmodule HarborWeb.SkipperLive.Show do
   use HarborWeb, :live_view
   alias Gust.Flows
   alias Harbor.Prompts
+  alias Harbor.Prompts.Prompt
 
   @impl true
   def render(assigns) do
@@ -18,11 +19,130 @@ defmodule HarborWeb.SkipperLive.Show do
         <div class="skipper-prompt-context__icon">
           <.icon name="hero-chat-bubble-bottom-center-text" class="size-5" />
         </div>
-        <div>
+        <div class="min-w-0 flex-1">
           <h2 class="skipper-prompt-context__label">Prompt</h2>
           <p id="prompt-content" class="skipper-prompt-context__text">{@content}</p>
         </div>
+
+        <.button
+          :if={@owner? && (!@run_finished? || @prompt.notification_email)}
+          id="skipper-notification-toggle"
+          type="button"
+          class="skipper-notification__trigger"
+          phx-click="open_notification_modal"
+          aria-expanded={@notification_form_open?}
+          aria-controls="skipper-notification-modal"
+          data-notification-set={if(@prompt.notification_email, do: "true", else: "false")}
+        >
+          <span :if={@prompt.notification_email} id="skipper-notification-saved">
+            <.icon name="hero-check-circle" class="size-4 text-emerald-600" /> Notification is set
+          </span>
+          <span :if={!@prompt.notification_email}>
+            <.icon name="hero-envelope" class="size-4" /> Notify when done
+          </span>
+        </.button>
       </aside>
+
+      <dialog
+        :if={@notification_form_open?}
+        id="skipper-notification-modal"
+        class="modal"
+        open
+        aria-modal="true"
+        aria-labelledby="skipper-notification-modal-title"
+        aria-describedby="skipper-notification-modal-description"
+      >
+        <div class="modal-box skipper-notification-modal__panel">
+          <button
+            id="skipper-notification-modal-close"
+            type="button"
+            class="skipper-notification-modal__close"
+            phx-click="close_notification_modal"
+            aria-label="Close notification form"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+
+          <header class="skipper-notification-modal__header">
+            <span class="skipper-notification-modal__icon">
+              <.icon name="hero-envelope" class="size-6" />
+            </span>
+            <div>
+              <h2 id="skipper-notification-modal-title" class="skipper-notification-modal__title">
+                {if(@run_finished?, do: "Your run is ready", else: "It can take a few minutes")}
+              </h2>
+              <p
+                id="skipper-notification-modal-description"
+                class="skipper-notification-modal__description"
+              >
+                {if(@run_finished?,
+                  do: "There is no need to schedule another notification.",
+                  else:
+                    "Enter your email and we'll let you know as soon as Skipper finishes this run."
+                )}
+              </p>
+            </div>
+          </header>
+
+          <div
+            :if={@run_finished?}
+            id="skipper-notification-finished"
+            role="alert"
+            class="alert alert-success mt-4"
+          >
+            <.icon
+              name="hero-information-circle"
+              class="h-6 w-6 shrink-0 stroke-current"
+            />
+            <span>Your run has already finished.</span>
+          </div>
+
+          <.form
+            :if={!@run_finished?}
+            for={@notification_form}
+            id="skipper-notification-form"
+            class="skipper-notification__form"
+            phx-change="validate_notification"
+            phx-submit="save_notification"
+          >
+            <div class="skipper-notification__field">
+              <div class="skipper-notification__input-wrap">
+                <.icon
+                  name="hero-envelope"
+                  class="skipper-notification__input-icon size-4"
+                />
+                <.input
+                  field={@notification_form[:notification_email]}
+                  id="skipper-notification-email"
+                  type="email"
+                  class="input validator w-full pl-9"
+                  placeholder="your@email.com"
+                  autocomplete="email"
+                  aria-label="Email address"
+                  required
+                />
+              </div>
+              <div class="validator-hint hidden">Enter a valid email address</div>
+            </div>
+
+            <.button
+              id="skipper-notification-submit"
+              type="submit"
+              class="btn btn-primary"
+            >
+              Notify
+            </.button>
+          </.form>
+        </div>
+
+        <form
+          method="dialog"
+          class="modal-backdrop"
+          phx-submit="close_notification_modal"
+        >
+          <button type="submit" aria-label="Close notification form">Close</button>
+        </form>
+      </dialog>
 
       <div
         id="skipper-workflow"
@@ -184,12 +304,15 @@ defmodule HarborWeb.SkipperLive.Show do
        |> assign(:page_title, "Show Skipper")
        |> assign(:browser_session_id, browser_session_id)
        |> assign(:owner?, prompt.browser_session_id == browser_session_id)
+       |> assign(:notification_form, Prompt.notification_changeset(prompt, %{}) |> to_form())
+       |> assign(:notification_form_open?, false)
        |> assign(:open_source_id, nil)
        |> assign(:prompt, prompt)
        |> assign(:recent_prompts, recent_prompts)
        |> assign(:content, prompt.content)
        |> assign(:current_prompt_id, prompt.id)
        |> assign(:run_id, run.id)
+       |> assign(:run_finished?, run.status in [:succeeded, :failed])
        |> assign(:synthesizer, run.params["synthesizer"])
        |> assign_tasks_results(run.id)}
     else
@@ -228,6 +351,67 @@ defmodule HarborWeb.SkipperLive.Show do
       _other -> {:noreply, socket}
     end
   end
+
+  def handle_event(
+        "open_notification_modal",
+        _params,
+        %{assigns: %{owner?: true}} = socket
+      ) do
+    {:noreply, assign(socket, :notification_form_open?, true)}
+  end
+
+  def handle_event("open_notification_modal", _params, socket), do: {:noreply, socket}
+
+  def handle_event("close_notification_modal", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:notification_form_open?, false)
+     |> assign(
+       :notification_form,
+       Prompt.notification_changeset(socket.assigns.prompt, %{}) |> to_form()
+     )}
+  end
+
+  def handle_event(
+        "validate_notification",
+        %{"prompt" => notification_params},
+        %{assigns: %{owner?: true, run_finished?: false}} = socket
+      ) do
+    changeset =
+      socket.assigns.prompt
+      |> Prompt.notification_changeset(notification_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, :notification_form, to_form(changeset))}
+  end
+
+  def handle_event(
+        "save_notification",
+        %{"prompt" => notification_params},
+        %{assigns: %{owner?: true, run_finished?: false}} = socket
+      ) do
+    case Prompts.set_notification_email(
+           socket.assigns.browser_session_id,
+           socket.assigns.prompt.id,
+           notification_params
+         ) do
+      {:ok, prompt} ->
+        Harbor.PromptNotifier.deliver_run_finished(prompt.gust_run_id)
+
+        {:noreply,
+         socket
+         |> assign(:prompt, prompt)
+         |> assign(:notification_form_open?, false)
+         |> assign(:notification_form, Prompt.notification_changeset(prompt, %{}) |> to_form())}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :notification_form, to_form(changeset))}
+    end
+  end
+
+  def handle_event(event, _params, socket)
+      when event in ["validate_notification", "save_notification"],
+      do: {:noreply, socket}
 
   defp assign_tasks_results(socket, run_id) do
     streamed_responses = Map.get(socket.assigns, :streamed_responses, %{})
@@ -285,11 +469,12 @@ defmodule HarborWeb.SkipperLive.Show do
 
   @impl true
   def handle_info(
-        {:dag, :run_status, %{run_id: run_id, status: _status, task_id: _task_id}},
+        {:dag, :run_status, %{run_id: run_id, status: status, task_id: task_id}},
         socket
       ) do
     {:noreply,
      socket
+     |> maybe_assign_run_finished(status, task_id)
      |> assign_tasks_results(run_id)}
   end
 
@@ -310,6 +495,16 @@ defmodule HarborWeb.SkipperLive.Show do
 
     {:noreply, socket}
   end
+
+  defp maybe_assign_run_finished(socket, status, nil) do
+    run_finished? = status in [:succeeded, :failed]
+
+    socket
+    |> assign(:run_finished?, run_finished?)
+    |> assign(:notification_form_open?, !run_finished? && socket.assigns.notification_form_open?)
+  end
+
+  defp maybe_assign_run_finished(socket, _status, _task_id), do: socket
 
   defp append_response_content(socket, task_id, delta) do
     with {:ok, task, socket} <- response_task(socket, task_id),

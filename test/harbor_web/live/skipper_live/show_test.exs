@@ -20,6 +20,14 @@ defmodule HarborWeb.SkipperLive.ShowTest do
     assert has_element?(view, "#skipper-sources-empty")
     assert has_element?(view, "#skipper-analysis-empty")
     assert has_element?(view, "#model-synthesizer-result.skipper-panel-model--selected")
+
+    assert has_element?(
+             view,
+             "#skipper-prompt-context #skipper-notification-toggle[data-notification-set=false]"
+           )
+
+    refute has_element?(view, "#skipper-notification-modal")
+    refute has_element?(view, "#skipper-notification-form")
     assert has_element?(view, "#skipper-try-again-actions")
 
     refute has_element?(view, "#skipper-analysis-status")
@@ -34,6 +42,7 @@ defmodule HarborWeb.SkipperLive.ShowTest do
     prompt: prompt,
     run: run
   } do
+    {:ok, _run} = Gust.Flows.update_run_status(run, :succeeded)
     response_task = response_task_fixture(run)
     analysis_task_fixture(run)
     synthesize_task_fixture(run)
@@ -64,6 +73,89 @@ defmodule HarborWeb.SkipperLive.ShowTest do
 
     assert has_element?(view, "a#skipper-try-again[href='/skipper']")
     assert has_element?(view, "#skipper-toggle-sharing")
+    refute has_element?(view, "#skipper-notification-toggle")
+  end
+
+  test "saves a completion notification email", %{conn: conn, prompt: prompt} do
+    {:ok, view, _html} = live(conn, ~p"/skipper/#{prompt.id}")
+
+    view |> element("#skipper-notification-toggle") |> render_click()
+
+    assert has_element?(view, "#skipper-notification-modal[open][aria-modal=true]")
+    assert has_element?(view, "#skipper-notification-modal-close")
+    assert has_element?(view, "#skipper-notification-form")
+
+    assert has_element?(
+             view,
+             "#skipper-notification-form #skipper-notification-email.input.validator[type=email]"
+           )
+
+    assert has_element?(view, "#skipper-notification-form .hero-envelope")
+    assert has_element?(view, "#skipper-notification-form .validator-hint.hidden")
+    assert has_element?(view, "#skipper-notification-submit.btn.btn-primary")
+
+    view
+    |> form("#skipper-notification-form", prompt: %{notification_email: "sailor@example.com"})
+    |> render_submit()
+
+    assert has_element?(
+             view,
+             "#skipper-notification-toggle[data-notification-set=true] #skipper-notification-saved .hero-check-circle"
+           )
+
+    refute has_element?(view, "#skipper-notification-modal")
+    refute has_element?(view, "#skipper-notification-form")
+
+    assert Harbor.Prompts.get_prompt!(prompt.browser_session_id, prompt.id).notification_email ==
+             "sailor@example.com"
+  end
+
+  test "validates the completion notification email", %{conn: conn, prompt: prompt} do
+    {:ok, view, _html} = live(conn, ~p"/skipper/#{prompt.id}")
+
+    view |> element("#skipper-notification-toggle") |> render_click()
+
+    view
+    |> form("#skipper-notification-form", prompt: %{notification_email: "not-an-email"})
+    |> render_change()
+
+    assert has_element?(view, "#skipper-notification-form .text-error")
+    refute Harbor.Prompts.get_prompt!(prompt.browser_session_id, prompt.id).notification_email
+  end
+
+  test "closes the completion notification modal", %{conn: conn, prompt: prompt} do
+    {:ok, view, _html} = live(conn, ~p"/skipper/#{prompt.id}")
+
+    view |> element("#skipper-notification-toggle") |> render_click()
+    assert has_element?(view, "#skipper-notification-modal")
+
+    view |> element("#skipper-notification-modal-close") |> render_click()
+    refute has_element?(view, "#skipper-notification-modal")
+  end
+
+  test "shows the finished state for a saved notification", %{
+    conn: conn,
+    prompt: prompt,
+    run: run
+  } do
+    {:ok, _prompt} =
+      Harbor.Prompts.set_notification_email(prompt.browser_session_id, prompt.id, %{
+        "notification_email" => "sailor@example.com"
+      })
+
+    {:ok, _run} = Gust.Flows.update_run_status(run, :succeeded)
+    {:ok, view, _html} = live(conn, ~p"/skipper/#{prompt.id}")
+
+    assert has_element?(
+             view,
+             "#skipper-notification-toggle[data-notification-set=true] .hero-check-circle"
+           )
+
+    view |> element("#skipper-notification-toggle") |> render_click()
+
+    assert has_element?(view, "#skipper-notification-modal")
+    assert has_element?(view, "#skipper-notification-finished[role=alert]")
+    refute has_element?(view, "#skipper-notification-form")
   end
 
   test "shares and stops sharing a completed result", %{

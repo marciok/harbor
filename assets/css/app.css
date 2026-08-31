@@ -438,22 +438,6 @@
     @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-sky-600 bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:border-sky-700 hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600;
   }
 
-  .home-hero__secondary-action {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600;
-  }
-
-  .home-hero__foundation {
-    @apply mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-200 pt-5;
-  }
-
-  .home-hero__foundation > span {
-    @apply inline-flex items-center gap-1.5 text-xs font-medium text-slate-500;
-  }
-
-  .home-hero__foundation svg {
-    @apply text-sky-600;
-  }
-
   .home-how {
     @apply scroll-mt-6 py-14 sm:py-9;
   }
@@ -549,38 +533,6 @@
     @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600;
   }
 
-  .home-gust {
-    @apply flex flex-col items-start gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:flex-row lg:items-center;
-  }
-
-  .home-gust__icon {
-    @apply flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-2;
-  }
-
-  .home-gust__logo {
-    @apply size-full object-contain;
-  }
-
-  .home-gust__content {
-    @apply min-w-0 flex-1;
-  }
-
-  .home-gust__content > p {
-    @apply text-xs font-bold tracking-widest text-sky-700 uppercase;
-  }
-
-  .home-gust__content > h2 {
-    @apply mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl;
-  }
-
-  .home-gust__content > span {
-    @apply mt-2 block max-w-3xl text-sm leading-6 text-slate-600;
-  }
-
-  .home-gust__action {
-    @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-900 bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:border-sky-700 hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700;
-  }
-
   .skipper-page {
     @apply mx-auto max-w-5xl pb-12;
   }
@@ -611,14 +563,6 @@
 
   .skipper-gateway-status__meta {
     @apply mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs;
-  }
-
-  .skipper-gateway-status__availability {
-    @apply inline-flex items-center gap-2 font-medium text-slate-600;
-  }
-
-  .skipper-gateway-status__dot {
-    @apply size-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100;
   }
 
   .skipper-gateway-status__balance {
@@ -845,10 +789,6 @@
     @apply size-full object-cover object-[center_32%];
   }
 
-  .zero-balance-modal__eyebrow {
-    @apply text-xs font-bold tracking-widest text-sky-700 uppercase;
-  }
-
   .zero-balance-modal__title {
     @apply mt-1 max-w-sm text-xl leading-tight font-bold tracking-tight text-slate-950 sm:text-2xl;
   }
@@ -865,14 +805,6 @@
     @apply flex items-start gap-3 rounded-xl  bg-sky-50 px-4 py-4;
   }
 
-  .zero-balance-modal__option-icon {
-    @apply flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm;
-  }
-
-  .zero-balance-modal__option-title {
-    @apply text-sm font-bold text-slate-950;
-  }
-
   .zero-balance-modal__option-copy {
     @apply mt-1 text-sm leading-6 text-sky-700
   }
@@ -883,10 +815,6 @@
 
   .zero-balance-modal__primary-action {
     @apply inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-sky-600 bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:border-sky-700 hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600;
-  }
-
-  .zero-balance-modal__secondary-action {
-    @apply min-h-11 w-full cursor-pointer rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:w-auto;
   }
 
   .zero-balance-modal__footnote {
@@ -907,6 +835,62 @@
 
   .skipper-prompt-context__text {
     @apply mt-1 text-sm leading-6 text-slate-700;
+  }
+
+  .skipper-notification__trigger {
+    @apply inline-flex min-h-9 shrink-0 cursor-pointer items-center rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 shadow-sm transition-colors hover:border-sky-300 hover:bg-sky-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600;
+  }
+
+  .skipper-notification__trigger span {
+    @apply inline-flex items-center gap-1.5;
+  }
+
+  .skipper-notification-modal__panel {
+    @apply relative max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto border border-slate-200 bg-white p-6 text-left text-slate-800 shadow-2xl sm:p-7;
+  }
+
+  .skipper-notification-modal__close {
+    @apply absolute top-3 right-3 flex size-9 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600;
+  }
+
+  .skipper-notification-modal__header {
+    @apply flex items-start gap-3 pr-8;
+  }
+
+  .skipper-notification-modal__icon {
+    @apply flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700;
+  }
+
+  .skipper-notification-modal__title {
+    @apply text-lg font-bold tracking-tight text-slate-950;
+  }
+
+  .skipper-notification-modal__description {
+    @apply mt-1 text-sm leading-6 text-slate-600;
+  }
+
+  .skipper-notification__form {
+    @apply mt-5 flex flex-col gap-3 sm:flex-row sm:items-start;
+  }
+
+  .skipper-notification__field {
+    @apply min-w-0 flex-1;
+  }
+
+  .skipper-notification__input-wrap {
+    @apply relative;
+  }
+
+  .skipper-notification__input-icon {
+    @apply pointer-events-none absolute top-3 left-3 z-10 text-slate-500;
+  }
+
+  .skipper-notification__input-wrap .fieldset {
+    @apply mb-0;
+  }
+
+  .skipper-notification__form #skipper-notification-submit {
+    @apply shrink-0 whitespace-nowrap sm:min-h-10;
   }
 
   .prompt-index {

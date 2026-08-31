@@ -44,6 +44,13 @@ defmodule Harbor.Prompts do
   end
 
   @doc """
+  Gets the prompt associated with a Gust run.
+  """
+  def get_prompt_by_gust_run_id(gust_run_id) when is_integer(gust_run_id) do
+    Repo.get_by(Prompt, gust_run_id: gust_run_id)
+  end
+
+  @doc """
   Gets a prompt when it belongs to the browser session or is public.
   """
   def get_accessible_prompt(browser_session_id, id) do
@@ -63,6 +70,16 @@ defmodule Harbor.Prompts do
     browser_session_id
     |> get_prompt!(id)
     |> Ecto.Changeset.change(public: public)
+    |> Repo.update()
+  end
+
+  @doc """
+  Sets the email that should receive a prompt completion notification.
+  """
+  def set_notification_email(browser_session_id, id, attrs) when is_map(attrs) do
+    browser_session_id
+    |> get_prompt!(id)
+    |> Prompt.notification_changeset(attrs)
     |> Repo.update()
   end
 

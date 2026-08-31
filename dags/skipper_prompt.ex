@@ -1,5 +1,5 @@
 defmodule SkipperPrompt do
-  use Gust.DSL
+  use Gust.DSL, on_finished_callback: :notify_user
   alias Gust.Flows
 
   @analysis_fields ~w(consensus contradictions partial_coverage unique_insights blind_spots)
@@ -73,6 +73,11 @@ defmodule SkipperPrompt do
       )
 
     %{answer: answer}
+  end
+
+  def notify_user(_callback_status, run) do
+    Harbor.PromptNotifier.deliver_run_finished(run.id)
+    :ok
   end
 
   defp panel_responses(run_id) do
